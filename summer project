@@ -1,0 +1,50 @@
+import pyaudio
+import wave
+import os
+from datetime import datetime
+
+def record_audio(duration=5, sample_rate=44100, chunk=1024, channels=1):
+    save_dir = "/Users/ummizhu/Praat/test"
+    filename = os.path.join(save_dir, datetime.now().strftime("%Y%m%d_%H%M%S") + ".wav")
+    p = pyaudio.PyAudio()
+    stream = p.open(format=pyaudio.paInt16, channels=channels, rate=sample_rate, input=True, frames_per_buffer=chunk)
+    
+    print("* Recording...")
+    frames = [stream.read(chunk) for _ in range(0, int(sample_rate / chunk * duration))]
+    print("* Recording finished")
+    
+    stream.stop_stream()
+    stream.close()
+    p.terminate()
+    
+    with wave.open(filename, 'wb') as wf:
+        wf.setnchannels(channels)
+        wf.setsampwidth(p.get_sample_size(pyaudio.paInt16))
+        wf.setframerate(sample_rate)
+        wf.writeframes(b''.join(frames))
+    
+    print(f"Recording saved as: {filename}")
+    return filename
+
+def play_audio(filename):
+    with wave.open(filename, 'rb') as wf:
+        p = pyaudio.PyAudio()
+        stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
+                        channels=wf.getnchannels(),
+                        rate=wf.getframerate(),
+                        output=True)
+        
+        print("* Playing...")
+        data = wf.readframes(1024)
+        while data:
+            stream.write(data)
+            data = wf.readframes(1024)
+        print("* Playback finished")
+        
+        stream.stop_stream()
+        stream.close()
+        p.terminate()
+
+if __name__ == "__main__":
+    recorded_file = record_audio()
+    play_audio(recorded_file)
