@@ -1,0 +1,38 @@
+# Define input and output files
+input_directory$ = "/Users/ummizhu/Praat/test/"
+output_file$ = "/Users/ummizhu/Praat/output/results.csv"
+
+# Create or clear the output file
+writeFileLine: output_file$, "Filename,F0,F1,F2,F3"
+
+# Get all audio files in the directory
+Create Strings as file list: "fileList", input_directory$ + "/*.wav"
+numberOfFiles = Get number of strings
+
+# Loop through each file
+for i from 1 to numberOfFiles
+    selectObject: "Strings fileList"
+    filename$ = Get string: i
+    Read from file: input_directory$ + "/" + filename$
+    sound = selected("Sound")
+
+    # Extract F0
+    selectObject: sound
+    To Pitch: 0, 75, 500
+    f0 = Get mean: 0, 0, "hertz"
+
+    # Extract F1, F2, and F3
+    selectObject: sound
+    To Formant (burg): 0, 5, 5500, 0.025, 50
+    f1 = Get mean: 1, 0, 0, "hertz"
+    f2 = Get mean: 2, 0, 0, "hertz"
+    f3 = Get mean: 3, 0, 0, "hertz"  
+
+    # Write the results
+    appendFileLine: output_file$, "'filename$','f0:2','f1:2','f2:2','f3:2'"
+
+    # Clean up objects
+    removeObject: sound
+endfor
+
+writeInfoLine: "Analysis completed. Results saved to ", output_file$
